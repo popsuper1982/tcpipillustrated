@@ -1,5 +1,7 @@
 #创建图中所有的节点，每个一个容器
 
+echo "create all containers"
+
 docker run --privileged=true --net none --name aix -d hub.c.163.com/liuchao110119163/ubuntu:1
 docker run --privileged=true --net none --name solaris -d hub.c.163.com/liuchao110119163/ubuntu:1
 docker run --privileged=true --net none --name gemini -d hub.c.163.com/liuchao110119163/ubuntu:1
@@ -11,11 +13,13 @@ docker run --privileged=true --net none --name bsdi -d hub.c.163.com/liuchao1101
 docker run --privileged=true --net none --name slip -d hub.c.163.com/liuchao110119163/ubuntu:1
 
 #创建两个网桥，代表两个二层网络
+echo "create bridges"
 
 brctl addbr net1
 brctl addbr net2
 
 #将所有的节点连接到两个网络
+echo "connect all containers to bridges"
 
 chmod +x ./pipework
 
@@ -30,7 +34,7 @@ chmod +x ./pipework
 ./pipework net2 svr4 140.252.13.34/27
 
 #添加从slip到bsdi的p2p网络
-
+echo "add p2p from slip to bsdi"
 #创建一个peer的两个网卡
 ip link add name slipside mtu 1500 type veth peer name bsdiside mtu 1500
 
@@ -75,7 +79,7 @@ docker exec -it svr4 ip route add 140.252.13.64/27 via 140.252.13.35 dev eth1
 #这个时候，从slip是可以ping的通下面的所有的节点的。
 
 #添加从sun到netb的点对点网络
-
+echo "add p2p from sun to netb"
 #创建一个peer的网卡对
 ip link add name sunside mtu 1500 type veth peer name netbside mtu 1500
 
@@ -106,6 +110,7 @@ docker exec -it netb ip route add 140.252.13.32/27 via 140.252.1.29 dev netbside
 docker exec -it netb ip route add 140.252.13.64/27 via 140.252.1.29 dev netbside
 
 #对于netb，配置arp proxy
+echo "config arp proxy for netb"
 
 #对于netb来讲，不是一个普通的路由器，因为netb两边是同一个二层网络，所以需要配置arp proxy，将同一个二层网络隔离称为两个。
 
@@ -128,10 +133,11 @@ docker cp proxy-arp.conf netb:/etc/proxy-arp.conf
 docker cp proxy-arp netb:/root/proxy-arp
 
 #在docker里面执行脚本proxy-arp
-docker exec -it netb chmod +x proxy-arp
+docker exec -it netb chmod +x /root/proxy-arp
 docker exec -it netb /root/proxy-arp start
 
 #配置上面的二层网络里面所有机器的路由
+echo "config all routes"
 
 #在aix里面，默认外网访问路由是1.4
 docker exec -it aix ip route add default via 140.252.1.4 dev eth1
