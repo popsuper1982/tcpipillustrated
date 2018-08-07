@@ -176,3 +176,29 @@ docker exec -it gateway ip route add 140.252.13.32/27 via 140.252.1.29 dev eth1
 docker exec -it gateway ip route add 140.252.13.64/27 via 140.252.1.29 dev eth1
 
 #到此为止，上下的二层网络都能相互访问了
+
+#配置外网访问
+
+echo "add public network"
+#创建一个peer的网卡对
+ip link add name gatewayin mtu 1500 type veth peer name gatewayout mtu 1500
+
+ip addr add 140.252.104.1/24 dev gatewayout
+ip link set gatewayout up
+
+#一面塞到gateway的网络的namespace里面
+DOCKERPID5=$(docker inspect '--format={{ .State.Pid }}' gateway)
+ln -s /proc/${DOCKERPID5}/ns/net /var/run/netns/${DOCKERPID5}
+ip link set gatewayin netns ${DOCKERPID5}
+
+#给gateway里面的网卡添加地址
+docker exec -it gateway ip addr add 140.252.104.2/24 dev gatewayin
+docker exec -it gateway ip link set gatewayin up
+
+#在gateway里面，对外访问的默认路由是140.252.104.1/24
+docker exec -it gateway ip route add default via 140.252.104.1 dev gatewayin
+
+iptables -t nat -A POSTROUTING -o enp0s8 -j MASQUERADE
+ip route add 140.252.13.32/27 via 140.252.104.2 dev gatewayout
+ip route add 140.252.13.64/27 via 140.252.104.2 dev gatewayout
+ip route add 140.252.1.0/24 via 140.252.104.2 dev gatewayout
