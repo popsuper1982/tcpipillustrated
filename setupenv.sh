@@ -1,3 +1,8 @@
+#!/bin/bash
+
+publiceth=$1
+imagename=$2
+
 #预配置环境
 systemctl stop ufw
 systemctl disable ufw
@@ -12,15 +17,15 @@ sysctl -p
 
 echo "create all containers"
 
-docker run --privileged=true --net none --name aix -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name solaris -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name gemini -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name gateway -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name netb -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name sun -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name svr4 -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name bsdi -d hub.c.163.com/liuchao110119163/ubuntu:1
-docker run --privileged=true --net none --name slip -d hub.c.163.com/liuchao110119163/ubuntu:1
+docker run --privileged=true --net none --name aix -d ${imagename}
+docker run --privileged=true --net none --name solaris -d ${imagename}
+docker run --privileged=true --net none --name gemini -d ${imagename}
+docker run --privileged=true --net none --name gateway -d ${imagename}
+docker run --privileged=true --net none --name netb -d ${imagename}
+docker run --privileged=true --net none --name sun -d ${imagename}
+docker run --privileged=true --net none --name svr4 -d ${imagename}
+docker run --privileged=true --net none --name bsdi -d ${imagename}
+docker run --privileged=true --net none --name slip -d ${imagename}
 
 #创建两个网桥，代表两个二层网络
 echo "create bridges"
@@ -198,7 +203,7 @@ docker exec -it gateway ip link set gatewayin up
 #在gateway里面，对外访问的默认路由是140.252.104.1/24
 docker exec -it gateway ip route add default via 140.252.104.1 dev gatewayin
 
-iptables -t nat -A POSTROUTING -o enp0s8 -j MASQUERADE
+iptables -t nat -A POSTROUTING -o ${publiceth} -j MASQUERADE
 ip route add 140.252.13.32/27 via 140.252.104.2 dev gatewayout
 ip route add 140.252.13.64/27 via 140.252.104.2 dev gatewayout
 ip route add 140.252.1.0/24 via 140.252.104.2 dev gatewayout
