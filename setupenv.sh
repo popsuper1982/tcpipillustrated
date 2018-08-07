@@ -1,3 +1,13 @@
+#预配置环境
+systemctl stop ufw
+systemctl disable ufw
+
+/sbin/iptables -P FORWARD ACCEPT
+
+echo 1 > /proc/sys/net/ipv4/ip_forward
+sysctl -p
+/sbin/iptables -P FORWARD ACCEPT
+
 #创建图中所有的节点，每个一个容器
 
 echo "create all containers"
@@ -15,8 +25,13 @@ docker run --privileged=true --net none --name slip -d hub.c.163.com/liuchao1101
 #创建两个网桥，代表两个二层网络
 echo "create bridges"
 
-brctl addbr net1
-brctl addbr net2
+ovs-vsctl add-br net1
+ip link set net1 up
+ovs-vsctl add-br net2
+ip link set net1 up
+
+#brctl addbr net1
+#brctl addbr net2
 
 #将所有的节点连接到两个网络
 echo "connect all containers to bridges"
