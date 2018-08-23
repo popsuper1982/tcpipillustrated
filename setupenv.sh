@@ -33,7 +33,7 @@ echo "create bridges"
 ovs-vsctl add-br net1
 ip link set net1 up
 ovs-vsctl add-br net2
-ip link set net1 up
+ip link set net2 up
 
 #brctl addbr net1
 #brctl addbr net2
